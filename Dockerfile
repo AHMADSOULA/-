@@ -1,15 +1,14 @@
-FROM python:3.12-slim
+# استخدام صورة رسمية تحتوي على بايثون ومتصفحات Playwright جاهزة
+FROM mcr.microsoft.com/playwright/python:v1.40.0-jammy
 
-ENV PYTHONUNBUFFERED=1
-ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
-
+# تعيين مجلد العمل
 WORKDIR /app
 
+# نسخ ملفات المشروع
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN playwright install --with-deps chromium
+COPY . .
 
-COPY GC.py .
-
+# تشغيل البوت
 CMD ["python", "GC.py"]
