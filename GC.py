@@ -13,12 +13,12 @@ import tempfile
 import shutil
 
 #===============================
-# إعدادات البوت (يجب أن تكون موجودة في Railway Variables)
-API_ID = int(os.environ["API_ID"])
-API_HASH = os.environ["API_HASH"]
-BOT_TOKEN = os.environ["BOT_TOKEN"]
+# تم استخدام os.environ.get لحماية بياناتك، مع وضع بياناتك الحالية كاحتياط
+API_ID = int(os.environ.get("API_ID", "35339972"))
+API_HASH = os.environ.get("API_HASH", "fcbb29c0cdd4fbeb66ba017020e721cc")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8809379627:AAHlKoMBm5TyOnWcN4A2WvqXge7inl8dZD4")
 
-client = TelegramClient('AM2_D3', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
+client = TelegramClient('DDarkNetConfigs_1', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
 
 # ==========================================
 # قالب VLESS المطابق للصورة
@@ -27,6 +27,7 @@ VLESS_TEMPLATE = (
     "?encryption=none&security=tls&sni=youtube.com&fp=chrome&type=ws"
     "&host={domain}&path=%2FTelegram%2F%401IJ77m%2F%40zxhv67#GCP-Xray"
 )
+
 
 JSON_TEMPLATE = r'''{
   "dns": {
@@ -181,7 +182,7 @@ async def handle_error(page, chat_id, step_name, error_msg):
     print(f"Error at {step_name}: {error_msg}")
     screenshot_path = f"error_{step_name}.png"
     try:
-        # تم تعديل full_page إلى False وإضافة timeout لتجنب انهيار الذاكرة
+        # full_page=False لمنع انهيار الذاكرة
         await page.screenshot(path=screenshot_path, full_page=False, timeout=5000)
         safe_error_msg = str(error_msg)[:900] + "\n... (تم تقصير الرسالة)" if len(str(error_msg)) > 800 else str(error_msg)
         
@@ -194,8 +195,6 @@ async def handle_error(page, chat_id, step_name, error_msg):
     except Exception as e:
         await client.send_message(chat_id, f"❌ حدث خطأ قاتل وما كدرت اخذ سكرين: {str(e)}")
 
-# ==========================================
-# دوال مساعدة
 # ==========================================
 def extract_domain_from_service_url(service_url: str) -> str:
     s = (service_url or "").strip()
@@ -293,7 +292,7 @@ async def step3_enable_api(page, project_id, authuser):
         elif await manage_btn.is_visible():
             pass 
     except Exception as e:
-         print(f"API Warning: {str(e)}")
+         raise Exception(f"عطل في إيجاد زر تفعيل الـ API: {str(e)}")
 
 async def step4_create_cloud_run(page, project_id, authuser):
     run_url = f"https://console.cloud.google.com/run/create?project={project_id}&authuser={authuser}"
@@ -334,7 +333,7 @@ async def step5_get_deployed_url(page):
     return final_url
 
 # ==========================================
-# العملية الرئيسية (تم إضافة إصلاحات المتصفح هنا)
+# العملية الرئيسية
 # ==========================================
 async def process_sso_link(chat_id, sso_url):
     project_id = extract_project_id(sso_url)
@@ -349,14 +348,14 @@ async def process_sso_link(chat_id, sso_url):
     
     async with async_playwright() as p:
         try:
-            # تم إضافة --disable-dev-shm-usage لحل مشكلة Target crashed
+            # تم إضافة --disable-dev-shm-usage وتفعيل headless=True للعمل على Railway
             context = await p.chromium.launch_persistent_context(
                 user_data_dir=temp_dir,
                 headless=True,
                 args=[
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage', # 👈 تمت الإضافة هنا
+                    '--disable-dev-shm-usage',
                     '--disable-blink-features=AutomationControlled',
                     '--disable-infobars',
                     '--window-size=1920,1080'
@@ -368,7 +367,7 @@ async def process_sso_link(chat_id, sso_url):
             page = context.pages[0]
             await page.goto(sso_url, wait_until="domcontentloaded", timeout=60000)
             
-            # Step 1
+            # 1
             await step1_welcome_screen(page)
             await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 2 ✅")
             
@@ -376,11 +375,11 @@ async def process_sso_link(chat_id, sso_url):
             current_qs = parse_qs(urlparse(page.url).query)
             authuser = current_qs.get('authuser', ['1'])[0]
             
-            # Step 2
+            # 2
             await client.send_message(chat_id, f"[@DDarkNetConfigs_1] • 3 ✅ (Project: {project_id})")
             await step2_tos_and_country(page)
             
-            # Step 3
+            # 3
             await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 4) تفعيل Cloud Run API...")
             try:
                 await step3_enable_api(page, project_id, authuser)
@@ -388,7 +387,7 @@ async def process_sso_link(chat_id, sso_url):
             except Exception as e:
                 await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 5 ⚠️ API غير مؤكد، متابعة...")
             
-            # Step 4
+            # 4
             await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 6) فتح Cloud Run...")
             await page.goto(f"https://console.cloud.google.com/run/create?project={project_id}&authuser={authuser}", wait_until="domcontentloaded")
             await page.wait_for_timeout(3000)
@@ -398,7 +397,7 @@ async def process_sso_link(chat_id, sso_url):
             await step4_create_cloud_run(page, project_id, authuser)
             await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 9 ✅")
             
-            # Step 5
+            # 5
             await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 10) Create الخدمة...")
             await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 11 ✅ Create")
             
@@ -408,7 +407,7 @@ async def process_sso_link(chat_id, sso_url):
             
             await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 🎉 تم النشر!")
             
-            # إخراج النتيجة النهائية
+            # إخراج النتيجة النهائية كما في الصورة
             await client.send_message(chat_id, f"🔗 الرابط:\n{final_url}")
             
             vless_result = VLESS_TEMPLATE.format(domain=domain)
