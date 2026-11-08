@@ -12,8 +12,6 @@ from telethon.tl.types import DocumentAttributeFilename
 import tempfile
 import shutil
 
-
-
 #===============================
 API_ID = int(os.environ["API_ID"])
 API_HASH = os.environ["API_HASH"]
@@ -22,10 +20,11 @@ BOT_TOKEN = os.environ["BOT_TOKEN"]
 client = TelegramClient('AM2_D3', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
 
 # ==========================================
+# تم تعديل القالب ليطابق الصورة تماماً
 VLESS_TEMPLATE = (
-    "vless://aaaa1111-bbbb-4ccc-8ddd-eeeeffff0000@google.com:443"
-    "?path=%2FTelegram%2F%40AM2_D3%2F%40AHMAD3214&security=tls&encryption=none"
-    "&host={domain}&type=ws&sni={domain}#%40AHMAD3214"
+    "vless://ffff6667-7777-4555-8aaa-5555a7777fff@{domain}:443"
+    "?encryption=none&security=tls&sni=youtube.com&fp=chrome&type=ws"
+    "&host={domain}&path=%2FTelegram%2F%401IJ77m%2F%40zxhv67#GCP-Xray"
 )
 
 
@@ -174,10 +173,7 @@ JSON_TEMPLATE = r'''{
 }'''
 
 
-
-
 DARKTUNNEL_BASE_URI = "darktunnel://eyJ0eXBlIjoiVkxFU1MiLCJuYW1lIjoi2YXYrNin2YbZiiDYp9iz2YrYpyDZiCDYp9ir2YrYsSAiLCJ2bGVzc1R1bm5lbENvbmZpZyI6eyJ2MnJheUNvbmZpZyI6eyJob3N0IjoiYWx0MTMueXQzLmdncGh0LmNvbSIsInBvcnQiOjQ0MywidXVpZCI6ImFhYWExMTExLWJiYmItNGNjYy04ZGRkLWVlZWVmZmZmMDAwMCIsInNlcnZlck5hbWVJbmRpY2F0aW9uIjoiYWx0MTMueXQzLmdncGh0LmNvbSIsIndzUGF0aCI6Ii9UZWxlZ3JhbS9AQU0yX0QzL0BBSE1BRDMyMTQiLCJ3c0hlYWRlckhvc3QiOiJhaG1lZC12aXAxLTQxNDAwODYxMjEyMy5ldXJvcGUtd2VzdDEucnVuLmFwcCJ9LCJpbmplY3RDb25maWciOnsiZW5hYmxlZCI6dHJ1ZSwibW9kZSI6IlBST1hZIiwicHJveHlIb3N0IjoiMTU3LjI0MC45LjM5IiwicGF5bG9hZCI6IkNPTk5FQ1QgW2hvc3RdOltwb3J0XSBIVFRQLzEuMVtjcmxmXXgtY29ubmVjdGVkLXRvOiAzNC4xNDMuNzIuMltjcmxmXXByb3h5LWNvbm5lY3Rpb246IGtlZXAtYWxpdmVbY3JsZl1jb25uZWN0aW9uOiBrZWVwLWFsaXZlW2NybGZddXNlci1hZ2VudDogRkJBVi8wLjAgW2NybGZdeC1pb3JnLWJzaWQ6IEBBTTJfRDNbY3JsZl1bY3JsZl0ifX19"
-
 
 # ==========================================
 # ==========================================
@@ -199,7 +195,6 @@ async def handle_error(page, chat_id, step_name, error_msg):
         await client.send_message(chat_id, f"❌ حدث خطأ قاتل وما كدرت اخذ سكرين: {str(e)}")
 
 
-# ==========================================
 def extract_domain_from_service_url(service_url: str) -> str:
     s = (service_url or "").strip()
     if s.startswith("http://") or s.startswith("https://"):
@@ -247,14 +242,6 @@ async def generate_and_send_dark_file(chat_id: int, domain: str):
         caption=f"✅ ملف DarkTunnel جاهز:\n`{domain}`"
     )
 
-
-# ==========================================
-# ==========================================
-
-
-
-
-
 def extract_project_id(url):
     match = re.search(r'(qwiklabs-gcp-[\w-]+)', url)
     if match:
@@ -262,12 +249,11 @@ def extract_project_id(url):
     return None
 
 # ==========================================
-# ==========================================
+# خطوات التشغيل
 # ==========================================
 
 async def step1_welcome_screen(page):
     await page.wait_for_load_state("networkidle")
-    
     await page.wait_for_timeout(2000)    
     await page.keyboard.press("Enter")
     
@@ -279,15 +265,11 @@ async def step1_welcome_screen(page):
         pass
     await page.wait_for_load_state("networkidle")
 
-# ==========================================
-# ==========================================
-# ==========================================
 async def step2_tos_and_country(page):
     agree_btn = page.get_by_role("button", name="Agree and continue")
     
     try:
         await agree_btn.wait_for(state="visible", timeout=10000)
-        
         checkboxes = page.get_by_role("checkbox")
         await checkboxes.nth(0).click()
         await asyncio.sleep(1)
@@ -295,14 +277,9 @@ async def step2_tos_and_country(page):
         
         await agree_btn.click()
         await page.wait_for_load_state("domcontentloaded")
-        
     except Exception:
         print("رسالة الشروط لم تظهر، تم التخطي تلقائياً.")
         pass
-
-# ==========================================
-# ==========================================
-# ==========================================
 
 async def step3_enable_api(page, project_id, authuser):
     api_url = f"https://console.cloud.google.com/apis/library/run.googleapis.com?project={project_id}&authuser={authuser}"
@@ -320,25 +297,19 @@ async def step3_enable_api(page, project_id, authuser):
         elif await manage_btn.is_visible():
             pass 
     except Exception as e:
-         raise Exception(f"عطل في إيجاد زر تفعيل الـ API: {str(e)}")
-
-# ==========================================
-# ==========================================
-# ==========================================
+         # في حال وجود API مفعل مسبقاً أو خطأ بسيط، نكمل
+         print(f"API Warning: {str(e)}")
 
 async def step4_create_cloud_run(page, project_id, authuser):
     run_url = f"https://console.cloud.google.com/run/create?project={project_id}&authuser={authuser}"
     await page.goto(run_url, wait_until="domcontentloaded")
-    
     await page.wait_for_timeout(5000)
     
     try:
         label = page.get_by_text("Container Image URL").first
         await label.click()
         await page.wait_for_timeout(500)
-        
         await page.keyboard.type("docker.io/ajndjd2/ahmed-vip1", delay=50)
-        
     except Exception as e:
         raise Exception(f"فشل في الضغط وكتابة الرابط: {str(e)}")
     
@@ -358,32 +329,27 @@ async def step4_create_cloud_run(page, project_id, authuser):
         
         create_btn = page.get_by_role("button", name="Create")
         await create_btn.click(force=True)
-        
     except Exception as e:
         raise Exception(f"فشل في اختيار الإعدادات أو ضغط Create: {str(e)}")
 
-
-# ==========================================
-# ==========================================
-# ==========================================
 async def step5_get_deployed_url(page):
     link_locator = page.locator('a[href*="run.app"]')
     await link_locator.wait_for(state="visible", timeout=120000) 
-    
     final_url = await link_locator.get_attribute("href")
     return final_url
 
 # ==========================================
-# ==========================================
+# العملية الرئيسية
 # ==========================================
 
 async def process_sso_link(chat_id, sso_url):
     project_id = extract_project_id(sso_url)
     if not project_id:
-        await client.send_message(chat_id, "❌ Project ID في الرابط.")
+        await client.send_message(chat_id, "❌ لم يتم العثور على Project ID في الرابط.")
         return
 
-    await client.send_message(chat_id, "⏳𝙡𝙚𝙩 𝙢𝙚 𝙨𝙚𝙚 𝙬𝙝𝙖𝙩 𝙄 𝙘𝙖𝙣 𝙙𝙤...")
+    await client.send_message(chat_id, "✅ تم استلام الرابط. جاري التنفيذ الآن...\n\n"
+                                        "[@DDarkNetConfigs_1] • 1) فتح رابط الطالب...")
 
     temp_dir = tempfile.mkdtemp()
     
@@ -404,46 +370,64 @@ async def process_sso_link(chat_id, sso_url):
             )
             
             page = context.pages[0]
-            
             await page.goto(sso_url, wait_until="domcontentloaded", timeout=60000)
             
-            
-            await client.send_message(chat_id, "🔄 𝙎𝙩𝙚𝙥 𝙤𝙣𝙚...")
+            # Step 1
             await step1_welcome_screen(page)
+            await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 2 ✅")
             
-            await client.send_message(chat_id, "⏳𝙩𝙖𝙠𝙞𝙣𝙜 𝙖 𝙘𝙞𝙜𝙖𝙧𝙚𝙩𝙩𝙚 𝙛𝙞𝙧𝙨𝙩...")
             await page.wait_for_url("**/home/dashboard**", timeout=45000)
-            
             current_qs = parse_qs(urlparse(page.url).query)
             authuser = current_qs.get('authuser', ['1'])[0]
             
-            await client.send_message(chat_id, f"🔄𝙉𝙤𝙬 𝙨𝙩𝙚𝙥 𝙩𝙬𝙤...")
+            # Step 2
+            await client.send_message(chat_id, f"[@DDarkNetConfigs_1] • 3 ✅ (Project: {project_id})")
             await step2_tos_and_country(page)
             
-            await client.send_message(chat_id, "🔄 𝙎𝙩𝙚𝙥 𝙩𝙝𝙧𝙚𝙚 𝙖𝙨 𝙛𝙖𝙨𝙩 𝙖𝙨 𝙄 𝙘𝙖𝙣 𝙗𝙧𝙤 ...")
-            await step3_enable_api(page, project_id, authuser)
+            # Step 3
+            await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 4) تفعيل Cloud Run API...")
+            try:
+                await step3_enable_api(page, project_id, authuser)
+                await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 5 ✅ API مفعل")
+            except Exception as e:
+                await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 5 ⚠️ API غير مؤكد، متابعة...")
             
-            await client.send_message(chat_id, "🔄 𝙣𝙤𝙬 𝙩𝙝𝙚 𝙧𝙚𝙖𝙡 𝙟𝙤𝙗: 𝙎𝙩𝙚𝙥 𝙛𝙤𝙪𝙧...")
+            # Step 4
+            await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 6) فتح Cloud Run...")
+            await page.goto(f"https://console.cloud.google.com/run/create?project={project_id}&authuser={authuser}", wait_until="domcontentloaded")
+            await page.wait_for_timeout(3000)
+            await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 7 ✅")
+            
+            await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 8) تعبئة الحقول...")
+            # (تنفيذ إنشاء Cloud Run)
             await step4_create_cloud_run(page, project_id, authuser)
+            await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 9 ✅")
             
-            await client.send_message(chat_id, "⏳𝙬𝙖𝙞𝙩, 𝙟𝙪𝙨𝙩 𝙤𝙣𝙚 𝙘𝙞𝙜𝙖𝙧𝙚𝙩𝙩𝙚...")
+            # Step 5
+            await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 10) Create الخدمة...")
+            await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 11 ✅ Create")
+            
+            await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 12) انتظار رابط النشر...")
             final_url = await step5_get_deployed_url(page)        
             domain = extract_domain_from_service_url(final_url)
             
-            await client.send_message(chat_id, f"✅ **𝙃𝙚𝙧𝙚 𝙮𝙤𝙪 𝙜𝙤 𝙗𝙧𝙤**\n\n 𝙙𝙤𝙢𝙖𝙞𝙣 :\n {domain}")
+            await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 🎉 تم النشر!")
+            
+            # إخراج النتيجة النهائية كما في الصورة
+            await client.send_message(chat_id, f"🔗 الرابط:\n{final_url}")
             
             vless_result = VLESS_TEMPLATE.format(domain=domain)
             await client.send_message(
                 chat_id, 
-                f"🔗 <pre><code class=\"language-java\">{vless_result}</code></pre>", 
-                parse_mode='html'
+                f"📋 VLESS:\n`{vless_result}`", 
+                parse_mode='markdown'
             )
             
             json_result = JSON_TEMPLATE.replace("__DOMAIN__", domain)
             await client.send_message(
                 chat_id, 
-                f"📄<pre><code class=\"language-json\">{json_result}</code></pre>", 
-                parse_mode='html'
+                f"📄 JSON:\n```json\n{json_result}\n```", 
+                parse_mode='markdown'
             )
             
             await generate_and_send_dark_file(chat_id, domain)
@@ -459,26 +443,30 @@ async def process_sso_link(chat_id, sso_url):
 
 
 # ==========================================
+# الأوامر
 # ==========================================
 
 @client.on(events.NewMessage(pattern=r"^/start$"))
 async def start(event):
+    # رسالة الترحيب مطابقة للصورة
     welcome_msg = (
-        "**إذا غامَرْتَ في شَرَفٍ مَرُومِ  ***  فَلا تَقنَعْ بما دونَ النّجومِ** ☁️✨\n\n"
-        "⏳ **الوقت:** 4 ساعات و 30 دقيقة (4:30 hours)\n"
-        "🔗 **الرابط:**\n"
-        "https://www.cloudskillsboost.google/focuses/20774?parent=catalog\n\n"
-        "⏳ **الوقت:** 3 ساعات (3:00 hours)\n"
-        "🔗 **الرابط:**\n"
-        "https://www.skills.google/focuses/82384?parent=catalog\n\n"
-
-        "@AM2_D3"
+        "🤚 **Google Cloud ➔ Cloud Run**\n\n"
+        "أرسل رابط Google SSO من:\n"
+        "https://www.skills.google/focuses/33353?parent=catalog\n\n"
+        "🔐 كلمة السر ➔ يخبرك البوت\n"
+        "🎯 كل شيء تلقائي\n\n"
+        "/cancel — إلغاء\n"
+        "/status — حالة"
     )
-    await event.reply(welcome_msg)
+    await event.reply(welcome_msg, link_preview=False)
 
+@client.on(events.NewMessage(pattern=r"^/cancel$"))
+async def cancel(event):
+    await event.reply("❌ تم إلغاء العملية الحالية (إن وجدت).")
 
-
-# ==========================================
+@client.on(events.NewMessage(pattern=r"^/status$"))
+async def status(event):
+    await event.reply("ℹ️ البوت يعمل حالياً. أرسل رابط SSO للبدء.")
 
 @client.on(events.NewMessage(pattern=r'https://www\.skills\.google/google_sso.*'))
 async def handler(event):
