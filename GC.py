@@ -13,6 +13,7 @@ import tempfile
 import shutil
 
 #===============================
+# إعدادات البوت (يجب أن تكون موجودة في Railway Variables)
 API_ID = int(os.environ["API_ID"])
 API_HASH = os.environ["API_HASH"]
 BOT_TOKEN = os.environ["BOT_TOKEN"]
@@ -20,13 +21,12 @@ BOT_TOKEN = os.environ["BOT_TOKEN"]
 client = TelegramClient('AM2_D3', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
 
 # ==========================================
-# تم تعديل القالب ليطابق الصورة تماماً
+# قالب VLESS المطابق للصورة
 VLESS_TEMPLATE = (
     "vless://ffff6667-7777-4555-8aaa-5555a7777fff@{domain}:443"
     "?encryption=none&security=tls&sni=youtube.com&fp=chrome&type=ws"
     "&host={domain}&path=%2FTelegram%2F%401IJ77m%2F%40zxhv67#GCP-Xray"
 )
-
 
 JSON_TEMPLATE = r'''{
   "dns": {
@@ -172,17 +172,17 @@ JSON_TEMPLATE = r'''{
   }
 }'''
 
-
 DARKTUNNEL_BASE_URI = "darktunnel://eyJ0eXBlIjoiVkxFU1MiLCJuYW1lIjoi2YXYrNin2YbZiiDYp9iz2YrYpyDZiCDYp9ir2YrYsSAiLCJ2bGVzc1R1bm5lbENvbmZpZyI6eyJ2MnJheUNvbmZpZyI6eyJob3N0IjoiYWx0MTMueXQzLmdncGh0LmNvbSIsInBvcnQiOjQ0MywidXVpZCI6ImFhYWExMTExLWJiYmItNGNjYy04ZGRkLWVlZWVmZmZmMDAwMCIsInNlcnZlck5hbWVJbmRpY2F0aW9uIjoiYWx0MTMueXQzLmdncGh0LmNvbSIsIndzUGF0aCI6Ii9UZWxlZ3JhbS9AQU0yX0QzL0BBSE1BRDMyMTQiLCJ3c0hlYWRlckhvc3QiOiJhaG1lZC12aXAxLTQxNDAwODYxMjEyMy5ldXJvcGUtd2VzdDEucnVuLmFwcCJ9LCJpbmplY3RDb25maWciOnsiZW5hYmxlZCI6dHJ1ZSwibW9kZSI6IlBST1hZIiwicHJveHlIb3N0IjoiMTU3LjI0MC45LjM5IiwicGF5bG9hZCI6IkNPTk5FQ1QgW2hvc3RdOltwb3J0XSBIVFRQLzEuMVtjcmxmXXgtY29ubmVjdGVkLXRvOiAzNC4xNDMuNzIuMltjcmxmXXByb3h5LWNvbm5lY3Rpb246IGtlZXAtYWxpdmVbY3JsZl1jb25uZWN0aW9uOiBrZWVwLWFsaXZlW2NybGZddXNlci1hZ2VudDogRkJBVi8wLjAgW2NybGZdeC1pb3JnLWJzaWQ6IEBBTTJfRDNbY3JsZl1bY3JsZl0ifX19"
 
 # ==========================================
+# دالة معالجة الأخطاء (تم تعديلها لعدم انهيار المتصفح)
 # ==========================================
-
 async def handle_error(page, chat_id, step_name, error_msg):
     print(f"Error at {step_name}: {error_msg}")
     screenshot_path = f"error_{step_name}.png"
     try:
-        await page.screenshot(path=screenshot_path, full_page=True)
+        # تم تعديل full_page إلى False وإضافة timeout لتجنب انهيار الذاكرة
+        await page.screenshot(path=screenshot_path, full_page=False, timeout=5000)
         safe_error_msg = str(error_msg)[:900] + "\n... (تم تقصير الرسالة)" if len(str(error_msg)) > 800 else str(error_msg)
         
         await client.send_file(
@@ -194,7 +194,9 @@ async def handle_error(page, chat_id, step_name, error_msg):
     except Exception as e:
         await client.send_message(chat_id, f"❌ حدث خطأ قاتل وما كدرت اخذ سكرين: {str(e)}")
 
-
+# ==========================================
+# دوال مساعدة
+# ==========================================
 def extract_domain_from_service_url(service_url: str) -> str:
     s = (service_url or "").strip()
     if s.startswith("http://") or s.startswith("https://"):
@@ -214,7 +216,6 @@ def darktunnel_encode(data: dict) -> str:
 
 def build_darktunnel_uri_with_host(new_host: str) -> str:
     data = darktunnel_decode(DARKTUNNEL_BASE_URI)
-    
     stack = [data]
     while stack:
         cur = stack.pop()
@@ -224,7 +225,6 @@ def build_darktunnel_uri_with_host(new_host: str) -> str:
             stack.extend(v for v in cur.values() if isinstance(v, (dict, list)))
         elif isinstance(cur, list):
             stack.extend(v for v in cur if isinstance(v, (dict, list)))
-            
     return darktunnel_encode(data)
 
 async def generate_and_send_dark_file(chat_id: int, domain: str):
@@ -251,12 +251,10 @@ def extract_project_id(url):
 # ==========================================
 # خطوات التشغيل
 # ==========================================
-
 async def step1_welcome_screen(page):
     await page.wait_for_load_state("networkidle")
     await page.wait_for_timeout(2000)    
     await page.keyboard.press("Enter")
-    
     try:
         button = page.locator("text='I understand'")
         if await button.is_visible(timeout=3000):
@@ -267,14 +265,12 @@ async def step1_welcome_screen(page):
 
 async def step2_tos_and_country(page):
     agree_btn = page.get_by_role("button", name="Agree and continue")
-    
     try:
         await agree_btn.wait_for(state="visible", timeout=10000)
         checkboxes = page.get_by_role("checkbox")
         await checkboxes.nth(0).click()
         await asyncio.sleep(1)
         await checkboxes.nth(1).click()
-        
         await agree_btn.click()
         await page.wait_for_load_state("domcontentloaded")
     except Exception:
@@ -297,7 +293,6 @@ async def step3_enable_api(page, project_id, authuser):
         elif await manage_btn.is_visible():
             pass 
     except Exception as e:
-         # في حال وجود API مفعل مسبقاً أو خطأ بسيط، نكمل
          print(f"API Warning: {str(e)}")
 
 async def step4_create_cloud_run(page, project_id, authuser):
@@ -339,9 +334,8 @@ async def step5_get_deployed_url(page):
     return final_url
 
 # ==========================================
-# العملية الرئيسية
+# العملية الرئيسية (تم إضافة إصلاحات المتصفح هنا)
 # ==========================================
-
 async def process_sso_link(chat_id, sso_url):
     project_id = extract_project_id(sso_url)
     if not project_id:
@@ -355,12 +349,14 @@ async def process_sso_link(chat_id, sso_url):
     
     async with async_playwright() as p:
         try:
+            # تم إضافة --disable-dev-shm-usage لحل مشكلة Target crashed
             context = await p.chromium.launch_persistent_context(
                 user_data_dir=temp_dir,
                 headless=True,
                 args=[
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage', # 👈 تمت الإضافة هنا
                     '--disable-blink-features=AutomationControlled',
                     '--disable-infobars',
                     '--window-size=1920,1080'
@@ -399,7 +395,6 @@ async def process_sso_link(chat_id, sso_url):
             await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 7 ✅")
             
             await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 8) تعبئة الحقول...")
-            # (تنفيذ إنشاء Cloud Run)
             await step4_create_cloud_run(page, project_id, authuser)
             await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 9 ✅")
             
@@ -413,7 +408,7 @@ async def process_sso_link(chat_id, sso_url):
             
             await client.send_message(chat_id, "[@DDarkNetConfigs_1] • 🎉 تم النشر!")
             
-            # إخراج النتيجة النهائية كما في الصورة
+            # إخراج النتيجة النهائية
             await client.send_message(chat_id, f"🔗 الرابط:\n{final_url}")
             
             vless_result = VLESS_TEMPLATE.format(domain=domain)
@@ -443,12 +438,11 @@ async def process_sso_link(chat_id, sso_url):
 
 
 # ==========================================
-# الأوامر
+# الأوامر والرسائل
 # ==========================================
 
 @client.on(events.NewMessage(pattern=r"^/start$"))
 async def start(event):
-    # رسالة الترحيب مطابقة للصورة
     welcome_msg = (
         "🤚 **Google Cloud ➔ Cloud Run**\n\n"
         "أرسل رابط Google SSO من:\n"
